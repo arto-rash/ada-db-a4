@@ -1,10 +1,43 @@
 #!/usr/bin/env python3
-import sys
+import sys, os
+
+def fnv1a_32(data):
+  h = 0x811C9DC5
+  
+  for byte in data:
+    h ^= byte
+    h = (h * 0x01000193) & 0xFFFFFFFF
+  return h
+
+def bucketize(text, n):
+  r = fnv1a_32(text.encode("utf-8")) % n
+  return r if r else n
+
+def parse_args():
+  n = int(sys.argv[1])
+  s = int(sys.argv[2])
+  
+  return n, s
 
 def main():
-	print("First commit for today")
+  n, s = parse_args()
+  
+  while True:
+    try:
+      text = input("Please enter the string: ")
+    except (KeyboardInterrupt, EOFError):
+      print()
+      break
+      
+    if text == "": continue
+    bucket = bucketize(text, n)
+    path = f"{bucket}.txt"
+    
+    with open(path, "a", encoding="utf-8") as f:
+      f.write(text)
+    print(f"{text} added to {path}")
 
 if __name__ == "__main__":
-	main()
+  main()
 
 
