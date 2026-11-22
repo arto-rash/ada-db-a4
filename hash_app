@@ -13,10 +13,36 @@ def bucketize(text, n):
   r = fnv1a_32(text.encode("utf-8")) % n
   return r if r else n
 
+def chain_file(bucket, index):
+  return f"{bucket}{'_'+str(index) if index else ''}.txt"
+
+def last_in_chain(bucket):
+  index = 0
+  while os.path.exists(chain_file(bucket, index + 1)):
+    index += 1
+  return index
+
+def target_file(bucket, text, s):
+  index = last_in_chain(bucket)
+  path = chain_file(bucket, index)
+  used = os.path.getsize(path) if os.path.exists(path) else 0
+  if used and (used+len(text))>s:
+    path = chain_file(bucket, index+1)
+  return path
+
 def parse_args():
-  n = int(sys.argv[1])
-  s = int(sys.argv[2])
-  
+  if len(sys.argv) != 3:
+    print("Usage should be like -> hash_app n s", file=sys.stderr)
+    sys.exit(1)
+  try:
+    n = int(sys.argv[1])
+    s = int(sys.argv[2])
+  except ValueError:
+    print("Error: n and s must be integers", file=sys.stderr)
+    sys.exit(1)
+  if n <= 0 or s <= 0:
+    print("Error: n and s must be positive", file=sys.stderr)
+    sys.exit(1)
   return n, s
 
 def main():
@@ -31,7 +57,7 @@ def main():
       
     if text == "": continue
     bucket = bucketize(text, n)
-    path = f"{bucket}.txt"
+    path = target_file(bucket, text,s)
     
     with open(path, "a", encoding="utf-8") as f:
       f.write(text)
